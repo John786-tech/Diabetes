@@ -1,0 +1,75 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+df = pd.read_excel("diabetes.xlsx")
+print("Dataset Shape:", df.shape)
+df.head()
+
+
+df.info()
+
+cols_with_zero = ['Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI']
+
+for col in cols_with_zero:
+    df[col] = df[col].replace(0, np.nan)
+
+
+df.fillna(df.median(), inplace=True)
+
+df.isnull().sum()
+
+plt.figure(figsize=(6,4))
+sns.countplot(x='Outcome', data=df)
+plt.title("Diabetes Outcome Distribution")
+plt.show()
+
+X = df.drop('Outcome', axis=1)
+y = df['Outcome']
+
+print("Features Shape:", X.shape)
+print("Target Shape:", y.shape)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+scaler = StandardScaler()
+
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy:", accuracy)
+cm = confusion_matrix(y_test, y_pred)
+
+plt.figure(figsize=(5,4))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.title("Confusion Matrix")
+plt.show()
+print(classification_report(y_test, y_pred))
+
+user_input = pd.DataFrame(
+    [[2, 120, 70, 20, 85, 28.5, 0.45, 32]],
+    columns=X.columns
+)
+
+user_input_scaled = scaler.transform(user_input)
+
+prediction = model.predict(user_input_scaled)
+
+if prediction[0] == 1:
+    print(" Result: Diabetic")
+else:
+    print(" Result: Not Diabetic")
